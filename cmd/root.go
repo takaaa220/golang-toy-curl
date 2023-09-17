@@ -46,7 +46,7 @@ func Execute(run Run) error {
 			return err
 		}
 
-		method := getMethod(methodStr)
+		method := core.NetMethod(methodStr)
 		http := getHttp(http1_0, http1_1, http2_0, http3_0)
 		tls := getTls(tls1_1, tls1_2, tls1_3)
 
@@ -115,27 +115,6 @@ func init() {
 
 }
 
-func getMethod(method string) core.Method {
-	switch method {
-	case "GET":
-		return core.GET
-	case "POST":
-		return core.POST
-	case "PUT":
-		return core.PUT
-	case "PATCH":
-		return core.PATCH
-	case "DELETE":
-		return core.DELETE
-	case "OPTIONS":
-		return core.OPTIONS
-	case "QUERY":
-		return core.QUERY
-	default:
-		return core.UNKNOWN_METHOD(method)
-	}
-}
-
 func getTls(v1_1, v1_2, v1_3 bool) core.TLSVersion {
 	if v1_2 {
 		return core.TLSV1_2
@@ -149,14 +128,14 @@ func getTls(v1_1, v1_2, v1_3 bool) core.TLSVersion {
 
 func getHttp(v1, v1_1, v2, v3 bool) core.HTTPVersion {
 	if v3 {
-		return core.HTTPVersion3_0
+		return core.HTTPV3_0
 	}
 	if v1_1 {
-		return core.HTTPVersion1_1
+		return core.HTTPV1_1
 	}
 	if v1 {
-		return core.HTTPVersion1_0
+		return core.HTTPV1_0
 	}
 
-	return core.HTTPVersion2_0
+	return core.HTTPV2_0
 }

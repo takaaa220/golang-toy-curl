@@ -2,6 +2,10 @@ package core
 
 import "fmt"
 
+type OutputConfig struct {
+	IsHead bool
+}
+
 type Output struct {
 	config OutputConfig
 }
