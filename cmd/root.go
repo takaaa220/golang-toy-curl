@@ -18,6 +18,7 @@ var (
 	method  string
 	headers []string
 	data    string
+	isHead  bool
 )
 
 type Run func(config core.Config) error
@@ -43,7 +44,7 @@ func Execute(run Run) error {
 			return err
 		}
 
-		return run(core.NewConfig(url, method, headers, data))
+		return run(core.NewConfig(url, method, headers, data, isHead))
 	}
 
 	return rootCmd.Execute()
@@ -99,4 +100,5 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&method, "request", "X", "GET", "Specify request method")
 	rootCmd.PersistentFlags().StringSliceVarP(&headers, "header", "H", []string{}, "Set request headers")
 	rootCmd.PersistentFlags().StringVarP(&data, "data", "d", "", "HTTP POST data")
+	rootCmd.PersistentFlags().BoolVarP(&isHead, "head", "I", false, "Show response headers only")
 }
