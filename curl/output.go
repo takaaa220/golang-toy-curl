@@ -1,16 +1,16 @@
-package core
+package curl
 
-import "fmt"
+import (
+	"fmt"
 
-type OutputConfig struct {
-	IsHead bool
-}
+	"github.com/takaaa220/golang-toy-curl/config"
+)
 
 type Output struct {
-	config OutputConfig
+	config config.OutputConfig
 }
 
-func NewOutput(config OutputConfig) Output {
+func NewOutput(config config.OutputConfig) Output {
 	return Output{
 		config: config,
 	}

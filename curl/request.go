@@ -1,4 +1,4 @@
-package core
+package curl
 
 import (
 	"bytes"
@@ -6,100 +6,39 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/takaaa220/golang-toy-curl/config"
 )
-
-var (
-	GET     Method = "GET"
-	POST    Method = "POST"
-	PUT     Method = "PUT"
-	PATCH   Method = "PATCH"
-	DELETE  Method = "DELETE"
-	OPTIONS Method = "OPTIONS"
-	QUERY   Method = "QUERY"
-)
-
-func UNKNOWN_METHOD(method string) Method {
-	return Method(method)
-}
-
-type Method string
-
-func NetMethod(method string) Method {
-	switch method {
-	case "GET":
-		return GET
-	case "POST":
-		return POST
-	case "PUT":
-		return PUT
-	case "PATCH":
-		return PATCH
-	case "DELETE":
-		return DELETE
-	case "OPTIONS":
-		return OPTIONS
-	case "QUERY":
-		return QUERY
-	default:
-		return UNKNOWN_METHOD(method)
-	}
-}
-
-type TLSVersion string
-
-var (
-	TLSV1_1 TLSVersion = "tlsv1.1"
-	TLSV1_2 TLSVersion = "tlsv1.2"
-	TLSV1_3 TLSVersion = "tlsv1.3"
-)
-
-type HTTPVersion string
-
-var (
-	HTTPV1_0 HTTPVersion = "http1.0"
-	HTTPV1_1 HTTPVersion = "http1.1"
-	HTTPV2_0 HTTPVersion = "http2.0"
-	HTTPV3_0 HTTPVersion = "http3.0"
-)
-
-type RequestConfig struct {
-	Url     string
-	Method  Method
-	Headers map[string]string
-	Data    string
-	Http    HTTPVersion
-	Tls     TLSVersion
-}
 
 type Client struct {
 	request   *http.Request
 	transport *http.Transport
 }
 
-func NewClient(config RequestConfig) (*Client, error) {
+func NewClient(cfg config.RequestConfig) (*Client, error) {
 	req, err := http.NewRequest(
-		string(config.Method),
-		config.Url,
-		bytes.NewBuffer([]byte(config.Data)),
+		string(cfg.Method),
+		cfg.Url,
+		bytes.NewBuffer([]byte(cfg.Data)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	for k, v := range config.Headers {
+	for k, v := range cfg.Headers {
 		req.Header.Set(k, v)
 	}
 
 	// TODO: support http3
-	if config.Http == HTTPV3_0 {
+	if cfg.Http == config.HTTPV3_0 {
 		return nil, fmt.Errorf("HTTP3 is not supported yet")
 	}
 
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			MinVersion: config.Tls.convert(),
+			MinVersion: convertTLSVersion(cfg.Tls),
 		},
-		ForceAttemptHTTP2: config.Http == HTTPV2_0,
+		ForceAttemptHTTP2: cfg.Http == config.HTTPV2_0,
 	}
 
 	return &Client{
@@ -108,13 +47,13 @@ func NewClient(config RequestConfig) (*Client, error) {
 	}, nil
 }
 
-func (t TLSVersion) convert() uint16 {
+func convertTLSVersion(t config.TLSVersion) uint16 {
 	switch t {
-	case TLSV1_1:
+	case config.TLSV1_1:
 		return tls.VersionTLS11
-	case TLSV1_2:
+	case config.TLSV1_2:
 		return tls.VersionTLS12
-	case TLSV1_3:
+	case config.TLSV1_3:
 		return tls.VersionTLS13
 	default:
 		panic(fmt.Sprintf("unknown tls version: %s", t))
