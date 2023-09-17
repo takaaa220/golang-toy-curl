@@ -12,30 +12,38 @@ var (
 	QUERY   Method = "QUERY"
 )
 
+func UNKNOWN_METHOD(method string) Method {
+	return Method(method)
+}
+
+type TLSVersion string
+
+var (
+	TLSV1_1 TLSVersion = "tlsv1.1"
+	TLSV1_2 TLSVersion = "tlsv1.2"
+	TLSV1_3 TLSVersion = "tlsv1.3"
+)
+
+type HTTPVersion string
+
+var (
+	HTTPVersion1_0 HTTPVersion = "http1.0"
+	HTTPVersion1_1 HTTPVersion = "http1.1"
+	HTTPVersion2_0 HTTPVersion = "http2.0"
+	HTTPVersion3_0 HTTPVersion = "http3.0"
+)
+
 type RequestConfig struct {
 	Url     string
 	Method  Method
 	Headers map[string]string
 	Data    string
-}
-
-func newRequestConfig(url string, method Method, headers map[string]string, data string) RequestConfig {
-	return RequestConfig{
-		Url:     url,
-		Method:  method,
-		Headers: headers,
-		Data:    data,
-	}
+	Http    HTTPVersion
+	Tls     TLSVersion
 }
 
 type OutputConfig struct {
 	IsHead bool
-}
-
-func newOutputConfig(isHead bool) OutputConfig {
-	return OutputConfig{
-		IsHead: isHead,
-	}
 }
 
 type Config struct {
@@ -43,9 +51,9 @@ type Config struct {
 	output  OutputConfig
 }
 
-func NewConfig(url string, method Method, headers map[string]string, data string, isHead bool) Config {
+func NewConfig(request RequestConfig, output OutputConfig) Config {
 	return Config{
-		request: newRequestConfig(url, method, headers, data),
-		output:  newOutputConfig(isHead),
+		request: request,
+		output:  output,
 	}
 }

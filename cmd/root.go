@@ -15,10 +15,17 @@ var (
 		Short:                 "A tool to make requests.",
 	}
 
-	method  string
-	headers []string
-	data    string
-	isHead  bool
+	methodStr string
+	headers   []string
+	data      string
+	isHead    bool
+	tls1_1    bool
+	tls1_2    bool
+	tls1_3    bool
+	http1_0   bool
+	http1_1   bool
+	http2_0   bool
+	http3_0   bool
 )
 
 type Run func(config core.Config) error
@@ -34,41 +41,31 @@ func Execute(run Run) error {
 			return fmt.Errorf("invalid url: %s", url)
 		}
 
-		method, err := parseMethod(method)
-		if err != nil {
-			return err
-		}
-
 		headers, err := parseHeaders(headers)
 		if err != nil {
 			return err
 		}
 
-		return run(core.NewConfig(url, method, headers, data, isHead))
+		method := getMethod(methodStr)
+		http := getHttp(http1_0, http1_1, http2_0, http3_0)
+		tls := getTls(tls1_1, tls1_2, tls1_3)
+
+		return run(core.NewConfig(
+			core.RequestConfig{
+				Url:     url,
+				Method:  method,
+				Headers: headers,
+				Data:    data,
+				Http:    http,
+				Tls:     tls,
+			},
+			core.OutputConfig{
+				IsHead: isHead,
+			},
+		))
 	}
 
 	return rootCmd.Execute()
-}
-
-func parseMethod(method string) (core.Method, error) {
-	switch method {
-	case "GET":
-		return core.GET, nil
-	case "POST":
-		return core.POST, nil
-	case "PUT":
-		return core.PUT, nil
-	case "PATCH":
-		return core.PATCH, nil
-	case "DELETE":
-		return core.DELETE, nil
-	case "OPTIONS":
-		return core.OPTIONS, nil
-	case "QUERY":
-		return core.QUERY, nil
-	default:
-		return "", fmt.Errorf("invalid method: %s", method)
-	}
 }
 
 func parseHeaders(headers []string) (map[string]string, error) {
@@ -97,8 +94,69 @@ func splitHeader(header string) (name string, value string, err error) {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&method, "request", "X", "GET", "Specify request method")
-	rootCmd.PersistentFlags().StringSliceVarP(&headers, "header", "H", []string{}, "Set request headers")
-	rootCmd.PersistentFlags().StringVarP(&data, "data", "d", "", "HTTP POST data")
-	rootCmd.PersistentFlags().BoolVarP(&isHead, "head", "I", false, "Show response headers only")
+	// request option
+	rootCmd.Flags().StringVarP(&methodStr, "request", "X", "GET", "Specify request method")
+	rootCmd.Flags().StringSliceVarP(&headers, "header", "H", []string{}, "Set request headers")
+	rootCmd.Flags().StringVarP(&data, "data", "d", "", "HTTP POST data")
+
+	// protocol option (tls)
+	rootCmd.Flags().BoolVar(&tls1_1, "tlsv1.1", false, "Use TLSv1.1 or greater")
+	rootCmd.Flags().BoolVar(&tls1_2, "tlsv1.2", false, "Use TLSv1.2 or greater")
+	rootCmd.Flags().BoolVar(&tls1_3, "tlsv1.3", true, "Use TLSv1.3 or greater")
+
+	// protocol option (http)
+	rootCmd.Flags().BoolVar(&http1_0, "http1.0", false, "Use HTTP/1.0")
+	rootCmd.Flags().BoolVar(&http1_1, "http1.1", false, "Use HTTP/1.1")
+	rootCmd.Flags().BoolVar(&http2_0, "http2.0", true, "Use HTTP/2.0")
+	rootCmd.Flags().BoolVar(&http3_0, "http3.0", false, "Use HTTP/3.0")
+
+	// output option
+	rootCmd.Flags().BoolVarP(&isHead, "head", "I", false, "Show response headers only")
+
+}
+
+func getMethod(method string) core.Method {
+	switch method {
+	case "GET":
+		return core.GET
+	case "POST":
+		return core.POST
+	case "PUT":
+		return core.PUT
+	case "PATCH":
+		return core.PATCH
+	case "DELETE":
+		return core.DELETE
+	case "OPTIONS":
+		return core.OPTIONS
+	case "QUERY":
+		return core.QUERY
+	default:
+		return core.UNKNOWN_METHOD(method)
+	}
+}
+
+func getTls(v1_1, v1_2, v1_3 bool) core.TLSVersion {
+	if v1_2 {
+		return core.TLSV1_2
+	}
+	if v1_1 {
+		return core.TLSV1_1
+	}
+
+	return core.TLSV1_3
+}
+
+func getHttp(v1, v1_1, v2, v3 bool) core.HTTPVersion {
+	if v3 {
+		return core.HTTPVersion3_0
+	}
+	if v1_1 {
+		return core.HTTPVersion1_1
+	}
+	if v1 {
+		return core.HTTPVersion1_0
+	}
+
+	return core.HTTPVersion2_0
 }

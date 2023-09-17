@@ -2,17 +2,23 @@ package core
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
 )
 
 type Client struct {
-	request *http.Request
+	request   *http.Request
+	transport *http.Transport
 }
 
 func NewClient(config RequestConfig) (*Client, error) {
-	req, err := http.NewRequest(string(config.Method), config.Url, bytes.NewBuffer([]byte(config.Data)))
+	req, err := http.NewRequest(
+		string(config.Method),
+		config.Url,
+		bytes.NewBuffer([]byte(config.Data)),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -21,9 +27,35 @@ func NewClient(config RequestConfig) (*Client, error) {
 		req.Header.Set(k, v)
 	}
 
+	// TODO: support http3
+	if config.Http == HTTPVersion3_0 {
+		return nil, fmt.Errorf("HTTP3 is not supported yet")
+	}
+
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			MinVersion: config.Tls.convert(),
+		},
+		ForceAttemptHTTP2: config.Http == HTTPVersion2_0,
+	}
+
 	return &Client{
-		request: req,
+		request:   req,
+		transport: transport,
 	}, nil
+}
+
+func (t TLSVersion) convert() uint16 {
+	switch t {
+	case TLSV1_1:
+		return tls.VersionTLS11
+	case TLSV1_2:
+		return tls.VersionTLS12
+	case TLSV1_3:
+		return tls.VersionTLS13
+	default:
+		panic(fmt.Sprintf("unknown tls version: %s", t))
+	}
 }
 
 func (r Client) Do() (string, map[string]string, error) {
