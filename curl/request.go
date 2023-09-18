@@ -61,7 +61,9 @@ func convertTLSVersion(t config.TLSVersion) uint16 {
 }
 
 func (r Client) Do() (string, map[string]string, error) {
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: r.transport,
+	}
 
 	resp, err := client.Do(r.request)
 	if err != nil {

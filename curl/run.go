@@ -17,7 +17,7 @@ func Run(cfg config.Config) error {
 		return fmt.Errorf("failed to request: %w", err)
 	}
 
-	output := NewOutput(cfg.Output)
+	output := NewOutput(cfg)
 	err = output.Do(response, headers)
 	if err != nil {
 		return fmt.Errorf("failed to output: %w", err)

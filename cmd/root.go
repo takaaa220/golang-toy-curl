@@ -54,14 +54,13 @@ func wrap(run Run) func(cmd *cobra.Command, args []string) error {
 			config.RequestConfig{
 				Url:     url,
 				Method:  method,
+				IsHead:  isHead,
 				Headers: headers,
 				Data:    data,
 				Http:    http,
 				Tls:     tls,
 			},
-			config.OutputConfig{
-				IsHead: isHead,
-			},
+			config.OutputConfig{},
 		))
 	}
 }
@@ -82,7 +81,7 @@ func parseHeaders(headers []string) (map[string]string, error) {
 			return nil, err
 		}
 
-		ma[name] = value
+		ma[name] = strings.TrimLeft(value, " ")
 	}
 
 	return ma, nil

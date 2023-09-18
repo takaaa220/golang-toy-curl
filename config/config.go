@@ -59,12 +59,12 @@ type RequestConfig struct {
 	Method  Method
 	Headers map[string]string
 	Data    string
+	IsHead  bool
 	Http    HTTPVersion
 	Tls     TLSVersion
 }
 
 type OutputConfig struct {
-	IsHead bool
 }
 
 type Config struct {

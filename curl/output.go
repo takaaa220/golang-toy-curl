@@ -7,17 +7,17 @@ import (
 )
 
 type Output struct {
-	config config.OutputConfig
+	config config.Config
 }
 
-func NewOutput(config config.OutputConfig) Output {
+func NewOutput(config config.Config) Output {
 	return Output{
 		config: config,
 	}
 }
 
 func (o Output) Do(body string, headers map[string]string) error {
-	if o.config.IsHead {
+	if o.config.Request.IsHead {
 		return o.head(headers)
 	}
 
